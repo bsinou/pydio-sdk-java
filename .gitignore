@@ -1,0 +1,10 @@
+/.gradle
+/.idea
+/build
+
+# JIdea
+local.properties
+*.iml
+
+# Java sources
+/sdk/build
