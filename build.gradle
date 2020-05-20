@@ -1,52 +1,61 @@
-buildscript {
-    repositories {
-        jcenter()
-    }
-}
-
 plugins {
-  id "java"
-  id "com.jfrog.artifactory" version "4.5.4"
-  id "com.jfrog.bintray" version "1.7.3"
-  id "maven-publish"
+    // Build java project
+    id 'java-library'
+
+    // Publish the generated resources as Maven Artifacts
+    // See: https://docs.gradle.org/5.0/userguide/publishing_overview.html#publishing_overview
+    id 'maven-publish'
+
+    // Push the artifact to bintray
+    // See: https://github.com/bintray/gradle-bintray-plugin
+    id 'com.jfrog.bintray' version '1.8.5'
 }
 
 repositories {
+    // Use jcenter for resolving dependencies.
     jcenter()
 }
 
-// run gradle with "-Drealease=true" to *NOT* automatically append "-SNAPSHOT" to the version
-version = '1.0' + (!Boolean.valueOf(System.getProperty("release")) ? "-SNAPSHOT" : "")
-sourceCompatibility = 1.8
-
-ext{
+ext {
     bintrayUser = System.getProperty("bintray.user")
     bintrayKey = System.getProperty("bintray.key")
-    buildNumber = System.getProperty("build.number")
+    //buildNumber = System.getProperty("build.number")
+    
+    githubUrl = 'https://github.com/bsinou/pydio-sdk-java.git'
+
 }
+
+
+sourceCompatibility = 1.8
+version = '0.1.0'
 
 dependencies {
-    compile('org.slf4j:slf4j-api:1.7.25')
-    testCompile('org.slf4j:slf4j-log4j12:1.7.25')
-    testCompile('org.testng:testng:6.8.7')
+    // This dependency is exported to consumers, that is to say found on their compile classpath.
+    // api 'org.apache.commons:commons-math3:3.6.1'
+
+    // These dependencies are used internally and not exposed to consumers on their own compile classpath.
+    implementation 'com.metaparadigm:json-rpc:1.0'
+    implementation 'io.swagger:swagger-annotations:1.6.1'
+    implementation 'com.squareup.okhttp:okhttp:2.7.5'
+    implementation 'com.squareup.okhttp:logging-interceptor:2.7.5'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'io.gsonfire:gson-fire:1.8.4'
+    implementation 'org.threeten:threetenbp:1.4.4'
+    // updating this cause JWT decoding failure
+    implementation 'commons-codec:commons-codec:1.10'
+
+    // Use JUnit test framework
+    testImplementation 'junit:junit:4.12'
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
+
+// Also publish sources and Javadoc
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
-javadoc.failOnError = false
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
-
+// Pre-create the pom configuration:
 def pomConfig = {
     licenses {
         license {
@@ -55,92 +64,73 @@ def pomConfig = {
             distribution "repo"
         }
     }
+
     developers {
         developer {
             id "jabarkarim"
             name "Jabar Karim"
             email "jabar@pydio.com"
         }
+        
         developer {
             id "bsinou"
             name "Bruno Sinou"
             email "bruno.sinou@posteo.de"
         }
     }
-
+    
     scm {
-        url "https://github.com/bsinou/pydio-sdk-java"
+       url githubUrl
     }
 }
 
 publishing {
     publications {
-        mavenPublication(MavenPublication) {
+        PydioSdk(MavenPublication) {
             from components.java
-            artifact sourcesJar {
-                classifier "sources"
-            }
-            artifact javadocJar {
-                classifier "javadoc"
-            }
             groupId 'com.pydio.sdk'
             artifactId 'pydio-sdk-java'
-            version project.version
+            version = version
+            
             pom.withXml {
                 def root = asNode()
-                root.appendNode('description', 'Java SDK for Pydio Cells (and legacy Pydio 8)')
-                root.appendNode('name', 'pydio-sdk-java')
-                root.appendNode('url', 'https://github.com/bsinou/pydio-sdk-java')
+                root.appendNode('description', 'Provide base java libraries to communicate with the Pydio stack')
+                root.appendNode('name', 'Pydio SDK for Java')
+                root.appendNode('url', 'https://pydio.com')
                 root.children().last() + pomConfig
             }
         }
     }
 }
 
-artifactory {
-    contextUrl = 'http://oss.jfrog.org'
-    publish {
-        repository {
-            repoKey = 'pydio-maven-releases'
-            username = bintrayUser
-            password = bintrayKey
-        }
-        defaults {
-            publications('mavenPublication')
-            publishArtifacts = true
-            publishPom = true
-            properties = [
-                    'build.number': buildNumber,
-                    'build.name': 'pydio-sdk-java'
-            ]
-        }
-    }
-    resolve {
-        repoKey = 'jcenter'
-    }
-    clientConfig.info.setBuildNumber(buildNumber)
-    clientConfig.info.setBuildName('pydio-sdk-java')
-}
-
 bintray {
     user = bintrayUser
     key = bintrayKey
-    publications = ['mavenPublication']
 
     pkg {
         repo = 'pydio-maven-releases'
         name = 'pydio-sdk-java'
+        //userOrg = bintrayUser
         licenses = ['Apache-2.0']
-        vcsUrl = 'https://github.com/bsinou/cells-sdk-java'
+        vcsUrl = githubUrl
+
+        publications = ['PydioSdk']
+
+        // Version info
         version {
-            name = project.version
-            desc = "build ${buildNumber}"
+            name = version
+            desc = 'First try'
             released  = new Date()
-            gpg {
-                sign = true
-            }
+            vcsTag = 'v'+version
+            //attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin']
         }
     }
-
-    publish = true
 }
+
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name,
+                   'Implementation-Version': project.version)
+    }
+}
+
