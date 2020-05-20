@@ -1,8 +1,8 @@
-# Cells SDK for Java
+# Pydio SDK for Java
 
 ## Getting started
 
-The Pydio Cells java SDK provides a Java implementation to communicate with a Pydio server Cells (and also with the legacy Pydio 8+ versions). Most of the functions are wrapped into the `com.pydio.sdk.core.Client` class that contains methods to easily manage your files on a Pydio server.
+The Pydio Java SDK provides a Java implementation to communicate with a Pydio Cells server (and also with the legacy Pydio 8+ versions). Most of the functions are wrapped into the `com.pydio.sdk.core.Client` class that contains methods to easily manage your files on a Pydio server.
 
 ## Configure and resolve a Pydio server
 
@@ -13,12 +13,11 @@ String url = "https://demo.pydio.com";
 ServerNode node = new ServerNode();
 Error error = node.resolve();
 if (error != null) {
-    // error.code could be
-    //Code.ssl_error or
-    //Code.pydio_server_not_supported or
-    //Code.pydio_server_not_supported or
-    //Code.con_failed or
-    //Code.ssl_certificate_not_signed or
+    // error.code could be one of:
+    // Code.ssl_error
+    // Code.pydio_server_not_supported
+    // Code.con_failed
+    // Code.ssl_certificate_not_signed
     System.out.println("failed to resolve server");
     return;
 }
@@ -47,7 +46,7 @@ client.setCredentials(credentials);
 ### Performing folder list
 
 ```java
-//listing root of "My Files" workspace
+// Listing the root of the "My Files" workspace
 try {
     client.ls("my-files", "/", (n) -> {
         System.out.println(n.label());
@@ -55,15 +54,14 @@ try {
 } catch(SDKexception e) {
     e.printStackTrace();
     Error error = Error.fromException(e)
-    // error.code could be
-    //Code.ssl_error or
-    //Code.pydio_server_not_supported or
-    //Code.pydio_server_not_supported or
-    //Code.con_failed or
-    //Code.ssl_certificate_not_signed or
+    // error.code could be one of:
+    // Code.ssl_error or
+    // Code.pydio_server_not_supported
+    // Code.con_failed
+    // Code.ssl_certificate_not_signed
 }
 ```
 
 ## Examples
 
-Find more examples [here](https://github.com/pydio/pydio-sdk-java-v2/tree/master/src/main/java/com/pydio/sdk/examples)
+Find more examples in [our sample package](./tree/master/src/main/java/com/pydio/sdk/examples).
